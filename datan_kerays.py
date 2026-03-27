@@ -24,6 +24,10 @@ def setup_database():
 dbc_file = "GGG.DBC"
 db = cantools.database.load_file(dbc_file)
 
+# Asetukset (helposti muokattavissa)
+AVERAGE_TIME_WINDOW = 15  # minuuttia
+DATA_EXPIRATION_TIME = 15  # minuuttia
+
 def collect_data():
     setup_database()
     try:
@@ -38,6 +42,19 @@ def collect_data():
             return
 
         while True:
+            # Poista yli 15 minuuttia vanhat tiedot
+            expiration_threshold = datetime.now() - timedelta(minutes=DATA_EXPIRATION_TIME)
+            cursor.execute("DELETE FROM data WHERE timestamp < ?", (expiration_threshold,))
+            conn.commit()
+
+            # Laske keskiarvo viimeisen 15 minuutin ajalta
+            average_threshold = datetime.now() - timedelta(minutes=AVERAGE_TIME_WINDOW)
+            cursor.execute("SELECT AVG(value) FROM data WHERE timestamp >= ?", (average_threshold,))
+            avg_fuelrate = cursor.fetchone()[0]
+
+            if avg_fuelrate:
+                print(f"Keskiarvoinen polttoainekulutus viimeisen {AVERAGE_TIME_WINDOW} minuutin ajalta: {avg_fuelrate:.3f} L/h")
+
             line = ser.readline().decode('ascii', errors='ignore').strip()
             if line:
                 parts = line.split()
@@ -60,6 +77,11 @@ def collect_data():
 
                     if fuelrate is not None:
                         print(f"FuelRate: {fuelrate:.3f} L/h")
+
+                        # Tallenna FuelRate tietokantaan
+                        cursor = conn.cursor()
+                        cursor.execute("INSERT INTO data (value) VALUES (?)", (fuelrate,))
+                        conn.commit()
 
                 except (ValueError, KeyError):
                     continue
