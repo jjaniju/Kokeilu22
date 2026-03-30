@@ -8,9 +8,10 @@ def analyze_data():
     while True:  # Jatkuva analysointi
         cursor.execute("SELECT * FROM data ORDER BY timestamp DESC LIMIT 5")
         rows = cursor.fetchall()
-        print("Latest data:")
-        for row in rows:
-            print(row)
+        if rows:
+            print("Latest data:")
+            for row in rows:
+                print(row)
 
         cursor.execute("SELECT AVG(value) FROM data")
         avg_fuelrate = cursor.fetchone()[0]
