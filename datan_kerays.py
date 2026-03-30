@@ -40,10 +40,19 @@ def collect_data():
         prev_fuelrate = None  # Seuraa edellistä FuelRate-arvoa
 
         while True:
-            # Poista yli 15 minuuttia vanhat tiedot
+            # Poista yli 15 minuuttia vanhat tiedot ja varmista, että tietokanta ei sisällä virheellisiä tietoja
             expiration_threshold = datetime.now() - timedelta(minutes=DATA_EXPIRATION_TIME)
             cursor.execute("DELETE FROM data WHERE timestamp < ?", (expiration_threshold,))
             conn.commit()
+
+            # Tarkista ja korjaa mahdolliset virheelliset tietueet tietokannassa
+            cursor.execute("SELECT id, value FROM fuel_rate")
+            rows = cursor.fetchall()
+            for row in rows:
+                record_id, value = row
+                if not isinstance(value, (int, float)) or value < 0:  # Esimerkki: negatiiviset tai ei-numeeriset arvot
+                    cursor.execute("DELETE FROM fuel_rate WHERE id = ?", (record_id,))
+                    conn.commit()
 
             line = ser.readline().decode('ascii', errors='ignore').strip()
             if line:
