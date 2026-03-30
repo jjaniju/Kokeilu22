@@ -41,9 +41,14 @@ def collect_data():
             print(f"Virhe sarjaportin avaamisessa: {e}")
             return
 
+        conn = sqlite3.connect("data.db")
+        cursor = conn.cursor()
+
         while True:
             # Poista yli 15 minuuttia vanhat tiedot
             expiration_threshold = datetime.now() - timedelta(minutes=DATA_EXPIRATION_TIME)
+            conn = sqlite3.connect("data.db")  # Alustetaan conn ennen käyttöä
+            cursor = conn.cursor()
             cursor.execute("DELETE FROM data WHERE timestamp < ?", (expiration_threshold,))
             conn.commit()
 
@@ -79,6 +84,7 @@ def collect_data():
                         print(f"FuelRate: {fuelrate:.3f} L/h")
 
                         # Tallenna FuelRate tietokantaan
+                        conn = sqlite3.connect("data.db")  # Alustetaan conn ennen käyttöä
                         cursor = conn.cursor()
                         cursor.execute("INSERT INTO data (value) VALUES (?)", (fuelrate,))
                         conn.commit()

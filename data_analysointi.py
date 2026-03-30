@@ -17,11 +17,14 @@ def analyze_data():
         avg_fuelrate = cursor.fetchone()[0]
 
         cursor.execute("SELECT value FROM data ORDER BY timestamp DESC LIMIT 1")
-        latest_fuellevel = cursor.fetchone()[0]
-
-        if avg_fuelrate and latest_fuellevel:
-            remaining_time = float(latest_fuellevel) / float(avg_fuelrate)
-            print(f"Ennuste: Polttoainetta riittää noin {remaining_time:.2f} tuntia.")
+        result = cursor.fetchone()
+        if result:
+            latest_fuellevel = result[0]
+            if avg_fuelrate:
+                remaining_time = float(latest_fuellevel) / float(avg_fuelrate)
+                print(f"Ennuste: Polttoainetta riittää noin {remaining_time:.2f} tuntia.")
+        else:
+            print("Ei polttoainetietoja saatavilla.")
 
         time.sleep(5)  # Simuloi analysoinnin viivettä
     conn.close()
