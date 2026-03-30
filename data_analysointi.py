@@ -12,6 +12,8 @@ def analyze_data():
             print("Latest data:")
             for row in rows:
                 print(row)
+        else:
+            continue
 
         cursor.execute("SELECT AVG(value) FROM data")
         avg_fuelrate = cursor.fetchone()[0]
