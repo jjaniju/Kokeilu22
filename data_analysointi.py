@@ -2,15 +2,40 @@ import sqlite3
 import time
 from datetime import datetime, timedelta
 
+def create_tables():
+    conn = sqlite3.connect("data.db")
+    cursor = conn.cursor()
+
+    # Create table for fuel rates
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS fuel_rate (
+        id INTEGER PRIMARY KEY,
+        value REAL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Create table for fuel levels
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS fuel_level (
+        id INTEGER PRIMARY KEY,
+        value REAL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
 def analyze_data():
     conn = sqlite3.connect("data.db")
     cursor = conn.cursor()
     prev_fuelrate = None  # Track the previous fuel rate
     while True:  # Jatkuva analysointi
-        cursor.execute("SELECT AVG(value) FROM data")
+        cursor.execute("SELECT AVG(value) FROM fuel_rate")
         avg_fuelrate = cursor.fetchone()[0]
 
-        cursor.execute("SELECT value FROM data ORDER BY timestamp DESC LIMIT 1")
+        cursor.execute("SELECT value FROM fuel_level ORDER BY timestamp DESC LIMIT 1")
         result = cursor.fetchone()
         latest_fuellevel = float(result[0]) if result else None
 
@@ -25,4 +50,5 @@ def analyze_data():
     conn.close()
 
 if __name__ == "__main__":
+    create_tables()
     analyze_data()
