@@ -24,10 +24,6 @@ def setup_database():
 dbc_file = "GGG.DBC"
 db = cantools.database.load_file(dbc_file)
 
-# Asetukset (helposti muokattavissa)
-AVERAGE_TIME_WINDOW = 15  # minuuttia
-DATA_EXPIRATION_TIME = 15  # minuuttia
-
 def collect_data():
     setup_database()
     try:
@@ -41,24 +37,13 @@ def collect_data():
             print(f"Virhe sarjaportin avaamisessa: {e}")
             return
 
-        conn = sqlite3.connect("data.db")
-        cursor = conn.cursor()
+        prev_fuelrate = None  # Seuraa edellistä FuelRate-arvoa
 
         while True:
             # Poista yli 15 minuuttia vanhat tiedot
             expiration_threshold = datetime.now() - timedelta(minutes=DATA_EXPIRATION_TIME)
-            conn = sqlite3.connect("data.db")  # Alustetaan conn ennen käyttöä
-            cursor = conn.cursor()
             cursor.execute("DELETE FROM data WHERE timestamp < ?", (expiration_threshold,))
             conn.commit()
-
-            # Laske keskiarvo viimeisen 15 minuutin ajalta
-            average_threshold = datetime.now() - timedelta(minutes=AVERAGE_TIME_WINDOW)
-            cursor.execute("SELECT AVG(value) FROM data WHERE timestamp >= ?", (average_threshold,))
-            avg_fuelrate = cursor.fetchone()[0]
-
-            if avg_fuelrate:
-                print(f"Keskiarvoinen polttoainekulutus viimeisen {AVERAGE_TIME_WINDOW} minuutin ajalta: {avg_fuelrate:.3f} L/h")
 
             line = ser.readline().decode('ascii', errors='ignore').strip()
             if line:
@@ -81,13 +66,13 @@ def collect_data():
                         print(f"FuelLevel: {fuellevel_liters:.2f} L")
 
                     if fuelrate is not None:
-                        print(f"FuelRate: {fuelrate:.3f} L/h")
+                        if fuelrate != prev_fuelrate:  # Tulosta vain, jos FuelRate muuttuu
+                            print(f"FuelRate: {fuelrate:.3f} L/h")
+                            prev_fuelrate = fuelrate
 
-                        # Tallenna FuelRate tietokantaan
-                        conn = sqlite3.connect("data.db")  # Alustetaan conn ennen käyttöä
-                        cursor = conn.cursor()
-                        cursor.execute("INSERT INTO data (value) VALUES (?)", (fuelrate,))
-                        conn.commit()
+                    # Tallenna FuelRate tietokantaan
+                    cursor.execute("INSERT INTO fuel_rate (value) VALUES (?)", (fuelrate,))
+                    conn.commit()
 
                 except (ValueError, KeyError):
                     continue
