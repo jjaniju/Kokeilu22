@@ -12,20 +12,17 @@ def analyze_data():
         for row in rows:
             print(row)
 
-        average_threshold = datetime.now() - timedelta(minutes=15)
-        cursor.execute("SELECT AVG(value) FROM data WHERE timestamp >= ?", (average_threshold,))
+        cursor.execute("SELECT AVG(value) FROM data")
         avg_fuelrate = cursor.fetchone()[0]
 
         cursor.execute("SELECT value FROM data ORDER BY timestamp DESC LIMIT 1")
         result = cursor.fetchone()
-        if not result or not avg_fuelrate:
-            continue
+        if result and avg_fuelrate:
+            latest_fuellevel = float(result[0])
+            remaining_time = avg_fuelrate / latest_fuellevel
+            print(f"Polttoaineen keskikulutus jaettuna bensamäärällä: {remaining_time:.2f}")
 
-        latest_fuellevel = float(result[0])
-        remaining_time = latest_fuellevel / avg_fuelrate
-        print(f"Ennuste: Polttoainetta riittää noin {remaining_time:.2f} tuntia.")
-
-        time.sleep(1)  # Simuloi analysoinnin viivettä
+        time.sleep(4)  # Simuloi analysoinnin viivettä
     conn.close()
 
 if __name__ == "__main__":
