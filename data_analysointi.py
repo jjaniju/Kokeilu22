@@ -5,27 +5,21 @@ from datetime import datetime, timedelta
 def analyze_data():
     conn = sqlite3.connect("data.db")
     cursor = conn.cursor()
+    prev_fuelrate = None  # Track the previous fuel rate
     while True:  # Jatkuva analysointi
-        cursor.execute("SELECT * FROM data ORDER BY timestamp DESC LIMIT 5")
-        rows = cursor.fetchall()
-        if rows:
-            for row in rows:
-                print(row)
-        else:
-            continue
-
-        # Calculate and print the average fuel rate
         cursor.execute("SELECT AVG(value) FROM data")
         avg_fuelrate = cursor.fetchone()[0]
-        if avg_fuelrate:
-            print(f"FuelRate Average: {avg_fuelrate:.3f} L/h")
 
         cursor.execute("SELECT value FROM data ORDER BY timestamp DESC LIMIT 1")
         result = cursor.fetchone()
-        if result and avg_fuelrate:
-            latest_fuellevel = float(result[0])
-            remaining_time = avg_fuelrate / latest_fuellevel
-            print(f"Polttoaineen keskikulutus jaettuna bensamäärällä: {remaining_time:.2f}")
+        latest_fuellevel = float(result[0]) if result else None
+
+        if avg_fuelrate != prev_fuelrate:  # Print only if the value changes
+            print(f"FuelRate Average: {avg_fuelrate:.3f} L/h")
+            prev_fuelrate = avg_fuelrate
+
+        if latest_fuellevel is not None:
+            print(f"FuelLevel: {latest_fuellevel:.2f} L")
 
         time.sleep(4)  # Simuloi analysoinnin viivettä
     conn.close()
