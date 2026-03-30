@@ -9,14 +9,16 @@ def analyze_data():
         cursor.execute("SELECT * FROM data ORDER BY timestamp DESC LIMIT 5")
         rows = cursor.fetchall()
         if rows:
-            print("Latest data:")
             for row in rows:
                 print(row)
         else:
             continue
 
+        # Calculate and print the average fuel rate
         cursor.execute("SELECT AVG(value) FROM data")
         avg_fuelrate = cursor.fetchone()[0]
+        if avg_fuelrate:
+            print(f"FuelRate Average: {avg_fuelrate:.3f} L/h")
 
         cursor.execute("SELECT value FROM data ORDER BY timestamp DESC LIMIT 1")
         result = cursor.fetchone()
